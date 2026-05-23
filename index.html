@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Neon Snake Arena - Retro Cyber Arcade</title>
+  <meta name="description" content="An advanced browser-based Snake game featuring dynamic themes, real-time procedural synthesised sound, top-10 leaderboards, player stats, obstacles, and swipe controls.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-cyberpunk">
+  
+  <!-- Full Screen Flash Effects -->
+  <div id="screenFlash" class="screen-flash"></div>
+
+  <main class="game-container">
+    
+    <!-- MAIN ARENA CABINET GRID -->
+    <section class="neon-card arena-panel">
+      <header class="game-header">
+        <div class="brand">
+          <h1 id="main-title">Neon Snake</h1>
+          <span class="subtitle">Arena Edition v3</span>
+        </div>
+        
+        <!-- Audio Control -->
+        <button id="soundToggleBtn" class="sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
+          <svg id="sound-on-icon" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+          <svg id="sound-off-icon" viewBox="0 0 24 24" style="display: none;">
+            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+          </svg>
+        </button>
+      </header>
+      
+      <!-- Canvas Wrapper containing overlays -->
+      <div id="canvasWrapper" class="canvas-wrapper">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <!-- CABINET SCREEN OVERLAYS -->
+        
+        <!-- 1. MAIN START SCREEN OVERLAY -->
+        <div id="startOverlay" class="canvas-overlay active">
+          <div class="overlay-scroll-container">
+            <h2 class="overlay-title" style="color: var(--neon-cyan); text-shadow: 0 0 12px var(--neon-cyan-glow); margin-bottom: 4px;">Neon Snake Arena</h2>
+            <span class="subtitle" style="margin-bottom: 20px; font-size: 0.65rem;">Arcade Core v3.0</span>
+            
+            <p class="overlay-text" style="font-size: 0.8rem; margin-bottom: 24px;">Enter the vector grid. Guide the neon matrix, collect power-ups, deflect obstacles, and claim your place in rankings.</p>
+            
+            <div class="menu-btn-group">
+              <button id="menuStartBtn" class="btn btn-primary menu-btn">Start Simulation</button>
+              <button id="menuConfigBtn" class="btn btn-secondary menu-btn">Grid Config</button>
+              <button id="menuRankingsBtn" class="btn btn-secondary menu-btn">Rankings & Stats</button>
+              <button id="menuHelpBtn" class="btn btn-secondary menu-btn">System Manual</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 2. SETTINGS SCREEN OVERLAY -->
+        <div id="settingsOverlay" class="canvas-overlay">
+          <div class="overlay-scroll-container">
+            <h3 class="overlay-title" style="color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan-glow);">Grid Config</h3>
+            
+            <div class="settings-grid">
+              <!-- Visual Themes -->
+              <div class="setting-group">
+                <span class="setting-label">Visual Theme</span>
+                <div class="btn-group" id="themeGroup">
+                  <button class="btn-tag active" data-value="CYBERPUNK">Cyberpunk</button>
+                  <button class="btn-tag" data-value="OCEAN">Ocean</button>
+                  <button class="btn-tag" data-value="LAVA">Lava</button>
+                  <button class="btn-tag" data-value="FOREST">Forest</button>
+                  <button class="btn-tag" data-value="ICE">Ice Crystal</button>
+                </div>
+              </div>
+
+              <!-- Difficulty -->
+              <div class="setting-group">
+                <span class="setting-label">Difficulty / Speed</span>
+                <div class="btn-group" id="diffGroup">
+                  <button class="btn-tag active" data-value="NORMAL">Normal</button>
+                  <button class="btn-tag" data-value="HARD">Hard</button>
+                  <button class="btn-tag" data-value="EXTREME">Extreme</button>
+                  <button class="btn-tag" data-value="EASY">Easy</button>
+                </div>
+              </div>
+              
+              <!-- Wall Mode -->
+              <div class="setting-group">
+                <span class="setting-label">Wall Physics</span>
+                <div class="btn-group" id="wallGroup">
+                  <button class="btn-tag active" data-value="CLASSIC">Classic</button>
+                  <button class="btn-tag" data-value="WRAP">Wrap</button>
+                </div>
+              </div>
+
+              <!-- Board Size -->
+              <div class="setting-group">
+                <span class="setting-label">Arena Scale</span>
+                <div class="btn-group" id="sizeGroup">
+                  <button class="btn-tag" data-value="SMALL">Small</button>
+                  <button class="btn-tag active" data-value="MEDIUM">Medium</button>
+                  <button class="btn-tag" data-value="LARGE">Large</button>
+                </div>
+              </div>
+
+              <!-- Obstacles -->
+              <div class="setting-group">
+                <span class="setting-label">Electric Obstacles</span>
+                <div class="btn-group" id="obsGroup">
+                  <button class="btn-tag active" data-value="OFF">Off</button>
+                  <button class="btn-tag" data-value="LIGHT">Light</button>
+                  <button class="btn-tag" data-value="MEDIUM">Medium</button>
+                  <button class="btn-tag" data-value="HARD">Hard</button>
+                </div>
+              </div>
+            </div>
+            
+            <button id="settingsBackBtn" class="btn btn-secondary back-btn">Back to Menu</button>
+          </div>
+        </div>
+        
+        <!-- 3. RANKINGS & STATS SCREEN OVERLAY -->
+        <div id="leaderboardOverlay" class="canvas-overlay">
+          <div class="overlay-scroll-container">
+            <h3 class="overlay-title" style="color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan-glow);">Arena Records</h3>
+            
+            <div class="leaderboard-tabs-wrapper">
+              <div class="leaderboard-tab-headers">
+                <button id="tabRankingsBtn" class="tab-header-btn active">Top 10 Ranks</button>
+                <button id="tabStatsBtn" class="tab-header-btn">Lifetime Stats</button>
+              </div>
+              
+              <!-- Top 10 rankings lists -->
+              <div id="tabRankingsContent" class="tab-content active">
+                <div class="table-container">
+                  <table class="leaderboard-table">
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>Score</th>
+                        <th>Surv.</th>
+                        <th>Cfg</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                      <!-- Rendered dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+                <button id="clearLeaderboardBtn" class="btn btn-danger clear-record-btn">Wipe Highscores</button>
+              </div>
+              
+              <!-- Lifetime Stats widget -->
+              <div id="tabStatsContent" class="tab-content">
+                <div class="stats-grid">
+                  <div class="stat-hud-box">
+                    <span class="stat-hud-label">Games Played</span>
+                    <span id="statGamesPlayed" class="stat-hud-val">0</span>
+                  </div>
+                  <div class="stat-hud-box">
+                    <span class="stat-hud-label">Foods Eaten</span>
+                    <span id="statFoodsEaten" class="stat-hud-val">0</span>
+                  </div>
+                  <div class="stat-hud-box">
+                    <span class="stat-hud-label">Best Record</span>
+                    <span id="statBestScore" class="stat-hud-val">0</span>
+                  </div>
+                  <div class="stat-hud-box">
+                    <span class="stat-hud-label">Max Survival</span>
+                    <span id="statLongestSurvival" class="stat-hud-val">0s</span>
+                  </div>
+                  <div class="stat-hud-box">
+                    <span class="stat-hud-label">Buffs Collected</span>
+                    <span id="statPowerupsCollected" class="stat-hud-val">0</span>
+                  </div>
+                </div>
+                <button id="clearStatsBtn" class="btn btn-danger clear-record-btn">Wipe Stats</button>
+              </div>
+            </div>
+            
+            <button id="leaderboardBackBtn" class="btn btn-secondary back-btn" style="margin-top: 10px;">Back to Menu</button>
+          </div>
+        </div>
+        
+        <!-- 4. HELP MANUAL SCREEN OVERLAY -->
+        <div id="helpOverlay" class="canvas-overlay">
+          <div class="overlay-scroll-container">
+            <h3 class="overlay-title" style="color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan-glow);">System Manual</h3>
+            
+            <div class="help-sections">
+              <!-- Keyboard Controls -->
+              <div class="help-section">
+                <h4 class="help-section-title">⌨️ Keyboard Controls</h4>
+                <p>Move: <strong>Arrow Keys</strong> or <strong>WASD</strong>. Pause/Resume: <strong>Spacebar</strong>. Modals: <strong>Escape</strong> to close.</p>
+              </div>
+              
+              <!-- Mobile Controls -->
+              <div class="help-section">
+                <h4 class="help-section-title">📱 Mobile Controls</h4>
+                <p>Swipe directly on the Canvas or use the large on-screen glowing D-pad below the cabinet.</p>
+              </div>
+
+              <!-- Wall Physics -->
+              <div class="help-section">
+                <h4 class="help-section-title">🧱 Wall Physics</h4>
+                <p><strong>Classic:</strong> Grid perimeter is electric (collision = game over).<br>
+                <strong>Wrap:</strong> Snake exits boundaries and reappears on the opposite edge.</p>
+              </div>
+
+              <!-- Power-ups -->
+              <div class="help-section">
+                <h4 class="help-section-title">⭐ Power-up Core Cells</h4>
+                <p>
+                  ⭐ <strong>Golden</strong>: Gives +40 bonus points (despawns in 5s).<br>
+                  ⏳ <strong>Temporal</strong>: Slows speed by 35% for 6s.<br>
+                  🛡️ <strong>Shield</strong>: Grants 1 collision immunity (breaks on impact).<br>
+                  ⚡ <strong>Multiplier</strong>: 2x scores for 7s.
+                </p>
+              </div>
+
+              <!-- Obstacles & Levels -->
+              <div class="help-section">
+                <h4 class="help-section-title">🛑 Obstacles & Level Up</h4>
+                <p>Obstacles are glowing electric hazard blocks. Eating 5 foods increases Level, which increments base speed slightly but awards level-up flashes!</p>
+              </div>
+            </div>
+            
+            <button id="helpBackBtn" class="btn btn-secondary back-btn">Back to Menu</button>
+          </div>
+        </div>
+        
+        <!-- 5. PAUSE OVERLAY -->
+        <div id="pauseOverlay" class="canvas-overlay">
+          <h2 class="overlay-title" style="color: var(--neon-yellow); text-shadow: 0 0 12px var(--neon-yellow-glow);">SIMULATION HALTED</h2>
+          <p class="overlay-text">System paused. Score holds at <span id="pauseScoreVal" style="color: var(--neon-cyan); font-weight: bold;">0</span></p>
+          <button id="overlayResumeBtn" class="btn btn-primary">Resume Simulation</button>
+        </div>
+        
+        <!-- 6. GAME OVER OVERLAY -->
+        <div id="gameOverOverlay" class="canvas-overlay">
+          <div class="overlay-scroll-container">
+            <h2 class="overlay-title" style="color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink-glow);">SYSTEM CRASH</h2>
+            
+            <div class="gameover-stats-card">
+              <div class="go-stat-row">
+                <span>Final Score:</span>
+                <span id="finalScoreVal" style="color: var(--neon-cyan); font-weight: bold;">0</span>
+              </div>
+              <div class="go-stat-row">
+                <span>Survival Time:</span>
+                <span id="finalTimeVal" style="color: var(--neon-yellow); font-weight: bold;">0s</span>
+              </div>
+              <div class="go-stat-row">
+                <span>Difficulty:</span>
+                <span id="finalDiffVal" style="color: var(--neon-pink); font-weight: bold;">NORMAL</span>
+              </div>
+            </div>
+            
+            <div class="highscore-badge" id="newHighScoreAlert" style="display: none;">
+              ★ NEW HIGH SCORE ★
+            </div>
+            
+            <button id="overlayRestartBtn" class="btn btn-danger" style="margin-top: 14px; width: 100%;">Reboot Grid</button>
+            <button id="gameOverMenuBtn" class="btn btn-secondary" style="margin-top: 10px; width: 100%;">Return to Menu</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Virtual D-pad (Shown on Mobile) -->
+      <div class="mobile-dpad">
+        <button id="dpadUp" class="dpad-btn dpad-up" aria-label="Move Up">
+          <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+        </button>
+        <button id="dpadLeft" class="dpad-btn dpad-left" aria-label="Move Left">
+          <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+        </button>
+        <button id="dpadRight" class="dpad-btn dpad-right" aria-label="Move Right">
+          <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </button>
+        <button id="dpadDown" class="dpad-btn dpad-down" aria-label="Move Down">
+          <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+        </button>
+      </div>
+    </section>
+    
+    <!-- SIDEBAR PANEL (HUD, Controls, Power-ups) -->
+    <aside class="sidebar">
+      
+      <!-- Score & Level HUD Card -->
+      <section class="neon-card score-panel">
+        <div class="hud-top-row">
+          <div class="score-item current">
+            <span class="score-label">Score</span>
+            <span id="scoreVal" class="score-value">0</span>
+          </div>
+          <div class="score-item high">
+            <span class="score-label">High Score</span>
+            <span id="highScoreVal" class="score-value">0</span>
+          </div>
+        </div>
+        
+        <!-- Level Progress Bar -->
+        <div class="level-progress-container">
+          <div class="level-labels">
+            <span class="hud-label">LVL <span id="levelVal" style="color: var(--neon-cyan); font-weight: bold;">1</span></span>
+            <span class="level-fraction"><span id="foodEatenVal">0</span> / 5</span>
+          </div>
+          <div class="level-bar-bg">
+            <div id="levelProgressBar" class="level-bar-fill"></div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Active Power-ups Sidebar Card -->
+      <section class="neon-card powerups-hud" id="powerupsHUD">
+        <h3 class="info-title" style="margin-bottom: 8px;">Active Systems</h3>
+        <div class="powerup-list" id="powerupList">
+          <!-- Shield Indicator -->
+          <div class="powerup-hud-item" id="hudShield" style="opacity: 0.35;">
+            <div class="p-hud-title">
+              <span class="p-icon" style="background: var(--neon-purple); box-shadow: 0 0 8px var(--neon-purple-glow);">🛡️</span>
+              <span>Shield Deflector</span>
+            </div>
+            <span class="p-status-val" id="shieldStatusVal">OFFLINE</span>
+          </div>
+          
+          <!-- Slow Motion Indicator -->
+          <div class="powerup-hud-item" id="hudSlow">
+            <div class="p-hud-title">
+              <span class="p-icon" style="background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan-glow);">⏳</span>
+              <span>Temporal Dilator</span>
+            </div>
+            <div class="p-timer-bar-bg">
+              <div id="timerBarSlow" class="p-timer-bar-fill" style="background: var(--neon-cyan); width: 0%;"></div>
+            </div>
+          </div>
+          
+          <!-- Score Multiplier Indicator -->
+          <div class="powerup-hud-item" id="hudMult">
+            <div class="p-hud-title">
+              <span class="p-icon" style="background: var(--neon-lime); box-shadow: 0 0 8px var(--neon-lime-glow);">⚡</span>
+              <span>Score Multiplier (2x)</span>
+            </div>
+            <div class="p-timer-bar-bg">
+              <div id="timerBarMult" class="p-timer-bar-fill" style="background: var(--neon-lime); width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Core Controls Button Panel -->
+      <section class="neon-card controls-panel">
+        <div class="hud-row-controls">
+          <button id="startGameBtn" class="btn btn-primary">Start</button>
+          <button id="pauseGameBtn" class="btn btn-secondary" disabled>Pause</button>
+          <button id="restartGameBtn" class="btn btn-danger" disabled>Reset</button>
+        </div>
+        
+        <!-- Live Velocity Display -->
+        <div class="speed-gauge-hud">
+          <span class="gauge-label">Grid Speed:</span>
+          <span id="speedGaugeVal" class="gauge-value">130 ms</span>
+        </div>
+        
+        <!-- Live Survival Timer -->
+        <div class="speed-gauge-hud" style="padding-top: 4px; border-top: none;">
+          <span class="gauge-label">Survival Time:</span>
+          <span id="survivalTimerVal" class="gauge-value" style="color: var(--neon-cyan);">0s</span>
+        </div>
+      </section>
+      
+      <!-- Instructional Controls info panel -->
+      <section class="neon-card info-panel">
+        <h3 class="info-title">System Manual</h3>
+        <div class="controls-list">
+          <div class="control-row">
+            <span>Move Snake</span>
+            <div class="key-tags">
+              <span class="key-tag">WASD</span>
+              <span class="key-tag">▲▼◀▶</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <span>Mobile Play</span>
+            <span class="key-tag" style="background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); color: var(--neon-cyan);">Swipe Canvas</span>
+          </div>
+          <div class="control-row">
+            <span>Pause Core</span>
+            <span class="key-tag">Spacebar</span>
+          </div>
+        </div>
+      </section>
+      
+    </aside>
+    
+  </main>
+  
+  <script src="script.js"></script>
+</body>
+</html>
