@@ -73,7 +73,10 @@ Tailor your gameplay vectors through the **Grid Config** dashboard:
     *   `Light` (4% density)
     *   `Medium` (8% density)
     *   `Hard` (12% density)
-5.  **Visual Themes**: Dynamically shifts styling tokens on the body and color hooks in the canvas loop:
+5.  **Graphics Modes**: Switch between two completely different native canvas rendering architectures (persisted in `localStorage` key `neonGraphicsMode`):
+    *   ⚡ **Neon Arcade** (Default): Premium retro grid glow theme with gradient square blocks and circular neon food items.
+    *   🐍 **Realistic Snake**: Organic tapered snake rendering with green/brown radial snake scales, side eyes, red animating tongue, bite-swell head animations, organic red apple food items, and impact flat crash squash animations.
+6.  **Visual Themes**: Dynamically shifts styling tokens on the body and color hooks in the canvas loop:
     *   🌌 **Cyberpunk**: Cyan head, pink tail, deep obsidian board.
     *   🐠 **Ocean Glow**: Teal head, royal blue tail, aquatic black-blue board.
     *   🌋 **Lava Core**: Crimson head, orange-yellow tail, ash black board.
@@ -145,6 +148,7 @@ Follow this checklist to audit the entire game experience:
 
 ### 3. Settings & Theme Changes
 - [ ] **Theme Switching**: Switch to Lava, Forest, Ocean, and Ice crystal themes. Verify body tags, buttons, grid meshes, and snake colors change immediately.
+- [ ] **Graphics Mode Options**: Select **Realistic Snake** in settings. Check that the sidebar "Graphics Core" HUD updates to "Realistic Snake" immediately. Reload the page and verify that the setting persists from `localStorage`.
 - [ ] **Board Scaling**: Toggle Small, Medium, and Large sizes. Confirm the grid spacing updates instantly.
 - [ ] **High Score Dynamic Load**: Toggle difficulty to Hard. Confirm that the High Score HUD resets to 0 (or its corresponding stored score) and reloads Hard records.
 
@@ -163,6 +167,9 @@ Follow this checklist to audit the entire game experience:
 - [ ] **Shield Immunity**: Grab a Shield Deflector power-up. HUD status should show "DEFLECTOR ARMED". Slither directly into a wall; verify play continues, the shield breaks with a gritty audio sweep, HUD status switches to "OFFLINE", and a shield broken text pops up.
 - [ ] **Live High Score HUD**: Break your high score. Verify that the High Score HUD increments dynamically in real-time during live play.
 - [ ] **Lifetime Stats**: Open rankings Stats tab. Verify Games Played, Foods Eaten, and Power-ups Collected increment correctly.
+- [ ] **Realistic Snake Aesthetics**: Slither in realistic mode. Verify the organic olive green/brown gradient circles, tapered tail segments, spade head, animated red tongue, and yellow slit eyes.
+- [ ] **Bite & Grow swell**: Consume a red apple in realistic mode. Verify the food breathes, and the snake head dynamically swells and settles on consumption.
+- [ ] **Crash impact squash**: Crash in realistic mode. Verify grey/brown dust particles burst, the snake head appears squashed flat with shock impact indicator lines, and game over overlay loads.
 
 ---
 

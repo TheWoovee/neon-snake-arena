@@ -74,6 +74,15 @@
                 </div>
               </div>
 
+              <!-- Graphics Mode -->
+              <div class="setting-group">
+                <span class="setting-label">Graphics Mode</span>
+                <div class="btn-group" id="graphicsModeGroup">
+                  <button class="btn-tag active" data-value="NEON">Neon Arcade</button>
+                  <button class="btn-tag" data-value="REALISTIC">Realistic Snake</button>
+                </div>
+              </div>
+
               <!-- Difficulty -->
               <div class="setting-group">
                 <span class="setting-label">Difficulty / Speed</span>
@@ -368,6 +377,12 @@
         <div class="speed-gauge-hud" style="padding-top: 4px; border-top: none;">
           <span class="gauge-label">Survival Time:</span>
           <span id="survivalTimerVal" class="gauge-value" style="color: var(--neon-cyan);">0s</span>
+        </div>
+        
+        <!-- Live Graphics Core Display -->
+        <div class="speed-gauge-hud" style="padding-top: 4px; border-top: none;">
+          <span class="gauge-label">Graphics Core:</span>
+          <span id="graphicsModeHUDVal" class="gauge-value" style="color: var(--neon-pink);">Neon Arcade</span>
         </div>
       </section>
       

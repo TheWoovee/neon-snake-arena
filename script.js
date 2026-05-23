@@ -68,6 +68,11 @@ let activeDifficulty = 'NORMAL';
 let activeWallMode = 'CLASSIC';
 let activeBoardSize = 'MEDIUM';
 let activeObstacleMode = 'OFF';
+let activeGraphicsMode = 'NEON';
+
+// Realistic Snake Dynamic Animators
+let eatingSwellFactor = 1.0;
+let isCrashHeadSquashed = false;
 
 // Game Engine State
 let isStarted = false;
@@ -193,6 +198,8 @@ const DOM = {
   settingsBackBtn: document.getElementById('settingsBackBtn'),
   leaderboardBackBtn: document.getElementById('leaderboardBackBtn'),
   helpBackBtn: document.getElementById('helpBackBtn'),
+  graphicsModeGroup: document.getElementById('graphicsModeGroup'),
+  graphicsModeHUDVal: document.getElementById('graphicsModeHUDVal'),
   
   // Mobile Arrow Keys
   dpadUp: document.getElementById('dpadUp'),
@@ -252,6 +259,10 @@ function loadUserPreferences() {
     const val = localStorage.getItem('neonObstacles');
     if (GAME_CONFIG.OBSTACLES[val]) activeObstacleMode = val;
   }
+  if (localStorage.getItem('neonGraphicsMode')) {
+    const val = localStorage.getItem('neonGraphicsMode');
+    if (val === 'NEON' || val === 'REALISTIC') activeGraphicsMode = val;
+  }
   if (localStorage.getItem('neonMuted') !== null) {
     isMuted = localStorage.getItem('neonMuted') === 'true';
   }
@@ -262,10 +273,16 @@ function loadUserPreferences() {
   
   // Set UI tags status active
   setSelectedTag('themeGroup', activeTheme);
+  setSelectedTag('graphicsModeGroup', activeGraphicsMode);
   setSelectedTag('diffGroup', activeDifficulty);
   setSelectedTag('wallGroup', activeWallMode);
   setSelectedTag('sizeGroup', activeBoardSize);
   setSelectedTag('obsGroup', activeObstacleMode);
+  
+  // Sync Graphics HUD text
+  if (DOM.graphicsModeHUDVal) {
+    DOM.graphicsModeHUDVal.textContent = activeGraphicsMode === 'REALISTIC' ? 'Realistic Snake' : 'Neon Arcade';
+  }
   
   // Sync Audio control icons
   if (isMuted) {
@@ -465,6 +482,12 @@ function gameEngineLoop(timestamp) {
     DOM.survivalTimerVal.textContent = `${elapsedSecs}s`;
   }
   
+  // Smoothly decay eating swell factor for realistic mode animations
+  if (eatingSwellFactor > 1.0) {
+    eatingSwellFactor -= 0.04;
+    if (eatingSwellFactor < 1.0) eatingSwellFactor = 1.0;
+  }
+  
   // Updates visuals particles background drifting
   updateParticles();
   updateFloatingTexts();
@@ -561,6 +584,14 @@ function drawObstacles(cellSize) {
 }
 
 function drawFood(cellSize) {
+  if (activeGraphicsMode === 'REALISTIC') {
+    drawRealisticFood(cellSize);
+  } else {
+    drawNeonFood(cellSize);
+  }
+}
+
+function drawNeonFood(cellSize) {
   const pulseFactor = Math.sin(Date.now() / 130) * 1.5 + 1.5;
   const radius = (cellSize - 6) / 2 + (pulseFactor * 0.35);
   const cx = food.x * cellSize + cellSize / 2;
@@ -580,6 +611,52 @@ function drawFood(cellSize) {
   DOM.ctx.shadowBlur = 0;
   DOM.ctx.beginPath();
   DOM.ctx.arc(cx - radius / 3, cy - radius / 3, radius / 4, 0, Math.PI * 2);
+  DOM.ctx.fill();
+  
+  DOM.ctx.restore();
+}
+
+function drawRealisticFood(cellSize) {
+  const pulse = Math.sin(Date.now() / 120) * 0.08 + 1.0;
+  const radius = ((cellSize - 6) / 2) * pulse;
+  const cx = food.x * cellSize + cellSize / 2;
+  const cy = food.y * cellSize + cellSize / 2;
+  
+  DOM.ctx.save();
+  
+  // Radial gradient for apple organic highlight
+  const grad = DOM.ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius);
+  grad.addColorStop(0, '#ff5c5c'); // Bright highlight
+  grad.addColorStop(0.7, '#d30c0c'); // Apple body
+  grad.addColorStop(1.0, '#5f0000'); // Shadowed edge
+  
+  DOM.ctx.fillStyle = grad;
+  DOM.ctx.shadowBlur = 8;
+  DOM.ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  DOM.ctx.shadowOffsetX = 2.5;
+  DOM.ctx.shadowOffsetY = 2.5;
+  
+  // Draw round apple body shape
+  DOM.ctx.beginPath();
+  DOM.ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  DOM.ctx.fill();
+  
+  // Draw stem (brown curved line)
+  DOM.ctx.shadowBlur = 0; // Disable shadow on stem
+  DOM.ctx.strokeStyle = '#5d4037';
+  DOM.ctx.lineWidth = 1.8;
+  DOM.ctx.beginPath();
+  DOM.ctx.moveTo(cx, cy - radius);
+  DOM.ctx.bezierCurveTo(cx - 2, cy - radius - 5, cx - 4, cy - radius - 6, cx - 6, cy - radius - 4);
+  DOM.ctx.stroke();
+  
+  // Draw leaf (vibrant green path)
+  DOM.ctx.fillStyle = '#4caf50';
+  DOM.ctx.beginPath();
+  DOM.ctx.moveTo(cx, cy - radius);
+  DOM.ctx.bezierCurveTo(cx + 3, cy - radius - 5, cx + 7, cy - radius - 5, cx + 7, cy - radius - 2);
+  DOM.ctx.bezierCurveTo(cx + 4, cy - radius, cx + 2, cy - radius - 1, cx, cy - radius);
+  DOM.ctx.closePath();
   DOM.ctx.fill();
   
   DOM.ctx.restore();
@@ -635,7 +712,14 @@ function drawPowerUps(cellSize) {
 
 function drawSnake(cellSize) {
   if (snake.length === 0) return;
-  
+  if (activeGraphicsMode === 'REALISTIC') {
+    drawRealisticSnake(cellSize);
+  } else {
+    drawNeonSnake(cellSize);
+  }
+}
+
+function drawNeonSnake(cellSize) {
   snake.forEach((segment, idx) => {
     DOM.ctx.save();
     
@@ -694,6 +778,162 @@ function drawSnake(cellSize) {
     }
     DOM.ctx.restore();
   });
+}
+
+function drawRealisticSnake(cellSize) {
+  // Draw body segments in reverse order so head layers cleanly on top of the neck
+  for (let idx = snake.length - 1; idx >= 0; idx--) {
+    const segment = snake[idx];
+    const x = segment.x * cellSize + cellSize / 2;
+    const y = segment.y * cellSize + cellSize / 2;
+    
+    if (idx === 0) {
+      // 1. DRAW HEAD (Index 0)
+      DOM.ctx.save();
+      DOM.ctx.translate(x, y);
+      
+      // Rotate head based on moving direction vector
+      let angle = 0;
+      if (direction === 'UP') angle = -Math.PI / 2;
+      else if (direction === 'DOWN') angle = Math.PI / 2;
+      else if (direction === 'LEFT') angle = Math.PI;
+      else if (direction === 'RIGHT') angle = 0;
+      DOM.ctx.rotate(angle);
+      
+      // Setup drop shadow under head
+      DOM.ctx.shadowBlur = 6;
+      DOM.ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      DOM.ctx.shadowOffsetX = 3;
+      DOM.ctx.shadowOffsetY = 3;
+      
+      // Animate forked tongue sliding in and out
+      if (!isCrashHeadSquashed) {
+        const tongueExt = cellSize * 0.4 + Math.sin(Date.now() / 80) * cellSize * 0.15;
+        DOM.ctx.strokeStyle = '#e60026';
+        DOM.ctx.lineWidth = 2.5;
+        DOM.ctx.shadowBlur = 0; // Disable shadow on tongue
+        DOM.ctx.beginPath();
+        DOM.ctx.moveTo(cellSize * 0.5, 0);
+        DOM.ctx.lineTo(cellSize * 0.5 + tongueExt, 0);
+        
+        // Red fork tips
+        DOM.ctx.moveTo(cellSize * 0.5 + tongueExt, 0);
+        DOM.ctx.lineTo(cellSize * 0.5 + tongueExt + 4, -4);
+        DOM.ctx.moveTo(cellSize * 0.5 + tongueExt, 0);
+        DOM.ctx.lineTo(cellSize * 0.5 + tongueExt + 4, 4);
+        DOM.ctx.stroke();
+      }
+      
+      // Restore head drop shadow
+      DOM.ctx.shadowBlur = 6;
+      DOM.ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      
+      // Spade head dimensions (scaled by swell factor on food eat)
+      let headW = cellSize * 1.3 * eatingSwellFactor;
+      let headH = cellSize * 1.4 * eatingSwellFactor;
+      
+      if (isCrashHeadSquashed) {
+        // Flatten head and expand sideways representing impact
+        headW = cellSize * 1.9;
+        headH = cellSize * 1.0;
+      }
+      
+      // Natural organic reptilian green/brown radial gradient
+      const grad = DOM.ctx.createRadialGradient(-3, -3, 2, 0, 0, cellSize * 0.7);
+      grad.addColorStop(0, '#556b2f'); // Olive drab highlight
+      grad.addColorStop(0.6, '#384d1d'); // Forest green
+      grad.addColorStop(1.0, '#212d11'); // Dark brown shadow edge
+      
+      DOM.ctx.fillStyle = grad;
+      DOM.ctx.beginPath();
+      // Draw smooth spade shape
+      DOM.ctx.moveTo(headH * 0.5, 0); // nose tip
+      DOM.ctx.bezierCurveTo(headH * 0.3, -headW * 0.5, -headH * 0.2, -headW * 0.55, -headH * 0.45, -headW * 0.35); // top lobe
+      DOM.ctx.bezierCurveTo(-headH * 0.6, -headW * 0.15, -headH * 0.6, headW * 0.15, -headH * 0.45, headW * 0.35); // neck transition
+      DOM.ctx.bezierCurveTo(-headH * 0.2, headW * 0.55, headH * 0.3, headW * 0.5, headH * 0.5, 0); // bottom lobe
+      DOM.ctx.closePath();
+      DOM.ctx.fill();
+      
+      // Draw yellow eyes with slit pupils
+      DOM.ctx.shadowBlur = 0; // Disable shadow for eyes
+      DOM.ctx.fillStyle = '#ffe600'; // Yellow reptiles iris
+      DOM.ctx.beginPath();
+      DOM.ctx.arc(headH * 0.15, -headW * 0.22, 3.5 * eatingSwellFactor, 0, Math.PI * 2);
+      DOM.ctx.arc(headH * 0.15, headW * 0.22, 3.5 * eatingSwellFactor, 0, Math.PI * 2);
+      DOM.ctx.fill();
+      
+      DOM.ctx.fillStyle = '#000000'; // Slit pupil
+      DOM.ctx.fillRect(headH * 0.15 - 0.7, -headW * 0.22 - 2, 1.4, 4);
+      DOM.ctx.fillRect(headH * 0.15 - 0.7, headW * 0.22 - 2, 1.4, 4);
+      
+      DOM.ctx.fillStyle = '#ffffff'; // Shine reflection
+      DOM.ctx.beginPath();
+      DOM.ctx.arc(headH * 0.15 - 1, -headW * 0.22 - 1, 0.7, 0, Math.PI * 2);
+      DOM.ctx.arc(headH * 0.15 - 1, headW * 0.22 - 1, 0.7, 0, Math.PI * 2);
+      DOM.ctx.fill();
+      
+      if (isCrashHeadSquashed) {
+        // Draw impact shock indicators on crash
+        DOM.ctx.strokeStyle = '#ffe600';
+        DOM.ctx.lineWidth = 1.5;
+        DOM.ctx.beginPath();
+        // Little sparks around nose
+        DOM.ctx.moveTo(headH * 0.5 + 4, -4); DOM.ctx.lineTo(headH * 0.5 + 10, -8);
+        DOM.ctx.moveTo(headH * 0.5 + 6, 0); DOM.ctx.lineTo(headH * 0.5 + 13, 0);
+        DOM.ctx.moveTo(headH * 0.5 + 4, 4); DOM.ctx.lineTo(headH * 0.5 + 10, 8);
+        DOM.ctx.stroke();
+      }
+      
+      DOM.ctx.restore();
+    } else {
+      // 2. DRAW BODY SEGMENTS (Index > 0)
+      DOM.ctx.save();
+      DOM.ctx.translate(x, y);
+      
+      // Soft ambient shadow under body
+      DOM.ctx.shadowBlur = 5;
+      DOM.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      DOM.ctx.shadowOffsetX = 2.5;
+      DOM.ctx.shadowOffsetY = 2.5;
+      
+      // Calculate smooth tapering down to tail
+      const minTaper = 0.35;
+      const taper = minTaper + (1 - minTaper) * Math.pow((snake.length - idx) / snake.length, 0.65);
+      const radius = (cellSize / 2) * 1.12 * taper;
+      
+      // Organic olive green & warm earth-brown gradients
+      const ratio = idx / (snake.length - 1 || 1);
+      const grad = DOM.ctx.createRadialGradient(-radius * 0.2, -radius * 0.2, radius * 0.1, 0, 0, radius);
+      
+      // Blends bright green into brown shades near the tail
+      const shadeGreen = Math.floor(107 - ratio * 45);
+      const shadeOlive = Math.floor(142 - ratio * 60);
+      const shadeBrown = Math.floor(35 + ratio * 20);
+      
+      grad.addColorStop(0, `rgb(${shadeOlive}, ${shadeGreen + 25}, 35)`); // Lighter highlight
+      grad.addColorStop(0.6, `rgb(${shadeGreen}, ${shadeGreen - 20}, 20)`); // Mid green
+      grad.addColorStop(1.0, `rgb(${shadeBrown + 20}, ${shadeBrown}, 15)`); // Earth brown shadow edge
+      
+      DOM.ctx.fillStyle = grad;
+      DOM.ctx.beginPath();
+      DOM.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      DOM.ctx.fill();
+      
+      // Draw organic scales arches texture overlay
+      DOM.ctx.shadowBlur = 0; // Disable shadow for texture lines
+      DOM.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      DOM.ctx.lineWidth = 1.0;
+      
+      DOM.ctx.beginPath();
+      // Draw nested reptilian scale arcs
+      DOM.ctx.arc(-radius * 0.3, -radius * 0.15, radius * 0.28, 0.2, Math.PI - 0.2);
+      DOM.ctx.arc(radius * 0.3, -radius * 0.15, radius * 0.28, 0.2, Math.PI - 0.2);
+      DOM.ctx.arc(0, radius * 0.25, radius * 0.28, 0.2, Math.PI - 0.2);
+      DOM.ctx.stroke();
+      
+      DOM.ctx.restore();
+    }
+  }
 }
 
 function drawRoundedRect(x, y, w, h, radius) {
@@ -759,6 +999,9 @@ function addScore(gained) {
   if (score > highScore) {
     highScore = score;
     DOM.highScoreVal.textContent = highScore;
+  }
+  if (activeGraphicsMode === 'REALISTIC') {
+    eatingSwellFactor = 1.35;
   }
 }
 
@@ -1628,6 +1871,10 @@ function initGame() {
   scoreMultExpires = 0;
   shieldActive = false;
   
+  // Realistic Dynamic visual variables reset
+  eatingSwellFactor = 1.0;
+  isCrashHeadSquashed = false;
+  
   // Timers resets
   survivalStartTime = 0;
   survivalTimeElapsed = 0;
@@ -1767,6 +2014,16 @@ function handleGameOver() {
   triggerScreenShake();
   triggerScreenFlash(true);
   
+  // Realistic graphics mode crash triggers
+  if (activeGraphicsMode === 'REALISTIC') {
+    isCrashHeadSquashed = true;
+    // Spawn organic-looking dust/grey impact particles
+    if (snake.length > 0) {
+      spawnParticles(snake[0].x, snake[0].y, '#795548', 18); // Brown dust
+      spawnParticles(snake[0].x, snake[0].y, '#9e9e9e', 12); // Lighter gray impact particles
+    }
+  }
+  
   DOM.canvasWrapper.className = 'canvas-wrapper game-over';
   DOM.finalScoreVal.textContent = score;
   DOM.finalTimeVal.textContent = `${finalSurvivalSeconds}s`;
@@ -1852,6 +2109,12 @@ function setupSettingsListeners() {
   };
   
   bindGroup('themeGroup', (val) => activeTheme = val, 'neonTheme');
+  bindGroup('graphicsModeGroup', (val) => {
+    activeGraphicsMode = val;
+    if (DOM.graphicsModeHUDVal) {
+      DOM.graphicsModeHUDVal.textContent = val === 'REALISTIC' ? 'Realistic Snake' : 'Neon Arcade';
+    }
+  }, 'neonGraphicsMode');
   bindGroup('diffGroup', (val) => activeDifficulty = val, 'neonDifficulty');
   bindGroup('wallGroup', (val) => activeWallMode = val, 'neonWallMode');
   bindGroup('sizeGroup', (val) => activeBoardSize = val, 'neonBoardSize');
